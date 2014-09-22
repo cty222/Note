@@ -1,0 +1,8 @@
+c:\users\travis.chang\documents\visual studio 2013\Projects\SMSTest1\SMSTest1\bin\Debug\SMSTest1.exe.config
+c:\users\travis.chang\documents\visual studio 2013\Projects\SMSTest1\SMSTest1\obj\Debug\SMSTest1.csprojResolveAssemblyReference.cache
+c:\users\travis.chang\documents\visual studio 2013\Projects\SMSTest1\SMSTest1\obj\Debug\SMSTest1.Properties.Resources.resources
+c:\users\travis.chang\documents\visual studio 2013\Projects\SMSTest1\SMSTest1\obj\Debug\SMSTest1.csproj.GenerateResource.Cache
+c:\users\travis.chang\documents\visual studio 2013\Projects\SMSTest1\SMSTest1\bin\Debug\SMSTest1.exe
+c:\users\travis.chang\documents\visual studio 2013\Projects\SMSTest1\SMSTest1\bin\Debug\SMSTest1.pdb
+c:\users\travis.chang\documents\visual studio 2013\Projects\SMSTest1\SMSTest1\obj\Debug\SMSTest1.exe
+c:\users\travis.chang\documents\visual studio 2013\Projects\SMSTest1\SMSTest1\obj\Debug\SMSTest1.pdb
