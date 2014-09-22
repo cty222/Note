@@ -13,3 +13,9 @@ Add new language branch
 2. git log
 3. git checkout <Initial version>
 4. git branch <New Branch>
+
+// ===================
+After Clone
+1. git branch --all   // Show all remote branch
+2. git checkout -t origin/<target name>   
+   // Creating local branch, otherwise it just have master in local.
