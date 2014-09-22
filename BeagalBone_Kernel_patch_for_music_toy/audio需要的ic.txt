@@ -1,0 +1,13 @@
+名稱		       個數             說明
+PGB0010603 MR           x4		PulseGuard ESD抑制器			----可先不用
+12MHz,FXO-HC735-12      x1		標準時鐘振盪器	應該可用12MHZ OSC取代   ----重要
+MMZ1608R301A		x2		積層貼片磁珠 (300歐姆阻抗)	      	----重要
+
+
+10uf  電容		x5
+0.1uf 電容		x5+x2
+47uf  電容		x6
+stereo phonejack	x2
+0.01uf 電容		x14		可能不重要
+0歐姆電阻		x2
+

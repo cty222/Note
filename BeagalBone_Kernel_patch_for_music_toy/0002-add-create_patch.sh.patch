@@ -1,0 +1,20 @@
+From e7b7f309e39f15c2d25f1ddcd062c1ed72be3059 Mon Sep 17 00:00:00 2001
+From: C-ty <cty222@hotmail.com>
+Date: Wed, 24 Jul 2013 09:17:16 -0700
+Subject: [PATCH 2/5] add create_patch.sh
+
+---
+ create_patch.sh |    1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100755 create_patch.sh
+
+diff --git a/create_patch.sh b/create_patch.sh
+new file mode 100755
+index 0000000..2ba2c8d
+--- /dev/null
++++ b/create_patch.sh
+@@ -0,0 +1 @@
++git format-patch 1fbb57374cccbef720200f463ee6ebe84660e1fa -1 -o /usr/local/AChenHow_kernel_patch/ 
+-- 
+1.7.9.5
+

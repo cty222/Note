@@ -1,0 +1,10 @@
+apt-get install vim minicom uboot-mkimage
+
+1.cpu     		no fix
+2.ram     		fix to 512mb
+  ./u-boot/include/configs/am335x.config
+
+3.debug port 		uart0 --> uart2
+ fix /usr/local/ti-sdk-am335x-evm/Rule.mk
+ UBOOT_MACHINE=am335x_evm_config ==> UBOOT_MACHINE=am335x_evm_uart2_config
+

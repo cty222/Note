@@ -1,0 +1,62 @@
+From 9e31a622b83820c44d8583ee48974293023792f5 Mon Sep 17 00:00:00 2001
+From: C-ty <cty222@hotmail.com>
+Date: Mon, 29 Jul 2013 11:43:51 -0700
+Subject: [PATCH 6/6] fix ram
+
+---
+ .../board/ti/am335x/board.c                        |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/board-support/u-boot-2013.01.01-psp05.07.00.00/board/ti/am335x/board.c b/board-support/u-boot-2013.01.01-psp05.07.00.00/board/ti/am335x/board.c
+index 6a01dbb..84119da 100644
+--- a/board-support/u-boot-2013.01.01-psp05.07.00.00/board/ti/am335x/board.c
++++ b/board-support/u-boot-2013.01.01-psp05.07.00.00/board/ti/am335x/board.c
+@@ -98,6 +98,7 @@ static int read_eeprom(void)
+ 		return -ENODEV;
+ 	}
+ 
++#if 1
+ 	/* read the eeprom using i2c */
+ 	if (i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, 0, 2, (uchar *)&header,
+ 							sizeof(header))) {
+@@ -124,6 +125,7 @@ static int read_eeprom(void)
+ 			return -EINVAL;
+ 		}
+ 	}
++#endif
+ 
+ 	return 0;
+ }
+@@ -531,8 +533,10 @@ void s_init(void)
+ 	/* Initalize the board header */
+ 	enable_i2c0_pin_mux();
+ 	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
++#if 1
+ 	if (read_eeprom() < 0)
+ 		puts("Could not get board ID.\n");
++#endif 
+ 
+ 	enable_board_pin_mux(&header);
+ 	if (board_is_evm_sk()) {
+@@ -544,6 +548,7 @@ void s_init(void)
+ 		gpio_direction_output(GPIO_DDR_VTT_EN, 1);
+ 	}
+ 
++#if 0
+ 	if (board_is_evm_sk() || board_is_bone_lt())
+ 		config_ddr(303, MT41J128MJT125_IOCTRL_VALUE, &ddr3_data,
+ 			   &ddr3_cmd_ctrl_data, &ddr3_emif_reg_data);
+@@ -553,6 +558,10 @@ void s_init(void)
+ 	else
+ 		config_ddr(266, MT47H128M16RT25E_IOCTRL_VALUE, &ddr2_data,
+ 			   &ddr2_cmd_ctrl_data, &ddr2_emif_reg_data);
++#else
++	config_ddr(303, MT41J512M8RH125_IOCTRL_VALUE, &ddr3_evm_data,
++                           &ddr3_evm_cmd_ctrl_data, &ddr3_evm_emif_reg_data);
++#endif
+ #endif
+ }
+ 
+-- 
+1.7.9.5
+
