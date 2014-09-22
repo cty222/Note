@@ -1,0 +1,326 @@
+From c503f42428383ca85393dcb21ed1f7c99757b44b Mon Sep 17 00:00:00 2001
+From: C-ty <cty222@hotmail.com>
+Date: Sun, 28 Jul 2013 10:24:02 -0700
+Subject: [PATCH 5/5] add audio codec
+
+---
+ .../arch/arm/mach-omap2/board-am335xevm.c          |   77 ++++++++++++++++++--
+ .../sound/soc/codecs/tlv320aic3x.c                 |    6 +-
+ .../sound/soc/davinci/davinci-evm.c                |   32 +++++++-
+ 3 files changed, 106 insertions(+), 9 deletions(-)
+
+diff --git a/board-support/linux-3.2.0-psp04.06.00.10/arch/arm/mach-omap2/board-am335xevm.c b/board-support/linux-3.2.0-psp04.06.00.10/arch/arm/mach-omap2/board-am335xevm.c
+index 84e3971..15fd794 100644
+--- a/board-support/linux-3.2.0-psp04.06.00.10/arch/arm/mach-omap2/board-am335xevm.c
++++ b/board-support/linux-3.2.0-psp04.06.00.10/arch/arm/mach-omap2/board-am335xevm.c
+@@ -166,6 +166,14 @@ static struct mfd_tscadc_board tscadc = {
+ 	.adc_init = &am335x_adc_data,
+ };
+ 
++static u8 beaglebone_iis_serializer_direction[] = {
++        INACTIVE_MODE,  INACTIVE_MODE,  RX_MODE,        TX_MODE,
++        INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,
++        INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,
++        INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,
++};
++
++
+ static u8 am335x_iis_serializer_direction1[] = {
+ 	INACTIVE_MODE,	INACTIVE_MODE,	TX_MODE,	RX_MODE,
+ 	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,
+@@ -188,6 +196,20 @@ static struct snd_platform_data am335x_evm_snd_data1 = {
+ 			omap_pm_get_dev_context_loss_count,
+ };
+ 
++static struct snd_platform_data beagle_bone_black_snd_data= {
++        .tx_dma_offset  = 0x46000000,   /* McASP0*/
++        .rx_dma_offset  = 0x46000000,
++        .op_mode        = DAVINCI_MCASP_IIS_MODE,
++        .num_serializer = ARRAY_SIZE(beaglebone_iis_serializer_direction),
++        .tdm_slots      = 2,
++        .serial_dir     = beaglebone_iis_serializer_direction,
++        .asp_chan_q     = EVENTQ_2,
++        .version        = MCASP_VERSION_3,
++        .txnumevt       = 1,
++        .rxnumevt       = 1,
++};
++
++
+ static u8 am335x_evm_sk_iis_serializer_direction1[] = {
+ 	INACTIVE_MODE,	INACTIVE_MODE,	TX_MODE,	INACTIVE_MODE,
+ 	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,
+@@ -589,13 +611,32 @@ static struct pinmux_config i2c1_pin_mux[] = {
+ };
+ 
+ static struct pinmux_config i2c2_pin_mux[] = {
++#if 1
+ 	{"uart1_ctsn.i2c2_sda",    OMAP_MUX_MODE3 | AM33XX_SLEWCTRL_SLOW |
+ 					AM33XX_PULL_UP | AM33XX_INPUT_EN},
+ 	{"uart1_rtsn.i2c2_scl",   OMAP_MUX_MODE3 | AM33XX_SLEWCTRL_SLOW |
+ 					AM33XX_PULL_UP | AM33XX_INPUT_EN},
++#else
++	{"uart1_ctsn.i2c2_sda",    OMAP_MUX_MODE3 | AM33XX_SLEWCTRL_SLOW |
++                                        OMAP_PIN_INPUT_PULLDOWN},
++        {"uart1_rtsn.i2c2_scl",   OMAP_MUX_MODE3 | AM33XX_SLEWCTRL_SLOW |
++                                        OMAP_PIN_INPUT_PULLDOWN},
++#endif
++
+ 	{NULL, 0},
+ };
+ 
++static struct pinmux_config mcasp0_pin_mux[] = {
++	{"mcasp0_ahclkx.mcasp0_axr3", OMAP_MUX_MODE2 | AM33XX_PIN_INPUT_PULLDOWN},
++        {"mcasp0_aclkx.mcasp0_aclkx", OMAP_MUX_MODE0 | AM33XX_PIN_INPUT_PULLDOWN},
++        {"mcasp0_fsx.mcasp0_fsx", OMAP_MUX_MODE0 | AM33XX_PIN_INPUT_PULLDOWN},
++
++        {"mcasp0_ahclkr.mcasp0_axr2", OMAP_MUX_MODE2 | AM33XX_PIN_INPUT_PULLDOWN},
++        {NULL, 0},
++
++};
++
++
+ /* Module pin mux for mcasp1 */
+ static struct pinmux_config mcasp1_pin_mux[] = {
+ 	{"mii1_crs.mcasp1_aclkx", OMAP_MUX_MODE4 | AM33XX_PIN_INPUT_PULLDOWN},
+@@ -1578,10 +1619,10 @@ static void lis331dlh_init(int evm_id, int profile)
+ }
+ 
+ static struct i2c_board_info am335x_i2c1_boardinfo[] = {
+-/*	{
++	{
+ 		I2C_BOARD_INFO("tlv320aic3x", 0x1b),
+ 	},
+-	{
++/*	{
+ 		I2C_BOARD_INFO("tsl2550", 0x39),
+ 	},
+ 	{
+@@ -1598,6 +1639,10 @@ static void i2c1_init(int evm_id, int profile)
+ }
+ 
+ static struct i2c_board_info am335x_i2c2_boardinfo[] = {
++        {
++                I2C_BOARD_INFO("tlv320aic3x", 0x1b),
++        },
++
+ };
+ 
+ static void i2c2_init(int evm_id, int profile)
+@@ -1608,6 +1653,12 @@ static void i2c2_init(int evm_id, int profile)
+ 	return;
+ }
+ 
++static void mcasp0_init(int evm_id, int profile)
++{
++	setup_pin_mux(mcasp0_pin_mux);
++	am335x_register_mcasp(&beagle_bone_black_snd_data, 0);
++}
++
+ /* Setup McASP 1 */
+ static void mcasp1_init(int evm_id, int profile)
+ {
+@@ -1814,6 +1865,16 @@ static void mmc0_init(int evm_id, int profile)
+ 	return;
+ }
+ 
++static struct regulator_consumer_supply bone_audio_supplies[] = {
++        /* tlv320aic3x analog supplies */
++        REGULATOR_SUPPLY("AVDD", "3-001b"),
++        REGULATOR_SUPPLY("DRVDD", "3-001b"),
++        /* tlv320aic3x digital supplies */
++        REGULATOR_SUPPLY("IOVDD", "3-001b"),
++        REGULATOR_SUPPLY("DVDD", "3-001b"),
++};
++
++
+ static struct i2c_board_info tps65217_i2c_boardinfo[] = {
+ 	{
+ 		I2C_BOARD_INFO("tps65217", TPS65217_I2C_ID),
+@@ -2165,11 +2226,13 @@ static struct evm_dev_cfg beaglebone_dev_cfg[] = {
+ 	{am335x_rtc_init, DEV_ON_BASEBOARD, PROFILE_NONE},
+ 	{clkout2_enable, DEV_ON_BASEBOARD, PROFILE_NONE},
+ 	{tps65217_init,	DEV_ON_BASEBOARD, PROFILE_NONE},
++	{lcdc_init, DEV_ON_BASEBOARD, PROFILE_NONE},
+ 	{mii1_init,	DEV_ON_BASEBOARD, PROFILE_NONE},
+ 	{usb0_init,	DEV_ON_BASEBOARD, PROFILE_NONE},
+ 	{usb1_init,	DEV_ON_BASEBOARD, PROFILE_NONE},
+ 	{mmc0_init,	DEV_ON_BASEBOARD, PROFILE_NONE},
+ 	{i2c2_init,	DEV_ON_BASEBOARD, PROFILE_NONE},
++	{mcasp0_init,   DEV_ON_BASEBOARD, PROFILE_NONE},
+ 	{NULL, 0, 0},
+ };
+ 
+@@ -2321,7 +2384,6 @@ static void am335x_evm_setup(struct memory_accessor *mem_acc, void *context)
+ {
+ 	int ret;
+ 	char tmp[10];
+-#if 0
+ 	/* 1st get the MAC address from EEPROM */
+ 	ret = mem_acc->read(mem_acc, (char *)&am335x_mac_addr,
+ 		EEPROM_MAC_ADDRESS_OFFSET, sizeof(am335x_mac_addr));
+@@ -2343,6 +2405,7 @@ static void am335x_evm_setup(struct memory_accessor *mem_acc, void *context)
+ 		goto out;
+ 	}
+ 
++#if 0
+ 	if (config.header != AM335X_EEPROM_HEADER) {
+ 		pr_err("AM335X: wrong header 0x%x, expected 0x%x\n",
+ 			config.header, AM335X_EEPROM_HEADER);
+@@ -2360,6 +2423,7 @@ static void am335x_evm_setup(struct memory_accessor *mem_acc, void *context)
+ 	snprintf(tmp, sizeof(config.version) + 1, "%s", config.version);
+ 	pr_info("Board version: %s\n", tmp);
+ 
++
+ 	if (!strncmp("A335BONE", config.name, 8)) {
+ 		daughter_brd_detected = false;
+ 		if(!strncmp("00A1", config.version, 4) ||
+@@ -2485,18 +2549,18 @@ static struct tps65910_board am335x_tps65910_info = {
+ *	   eeprom probe is called last.
+ */
+ static struct i2c_board_info __initdata am335x_i2c0_boardinfo[] = {
+-
++#if 0
+ 	{
+ 		/* Daughter Board EEPROM */
+ 		I2C_BOARD_INFO("24c256", DAUG_BOARD_I2C_ADDR),
+ 		.platform_data  = &am335x_daughter_board_eeprom_info,
+ 	},
++#endif
+ 	{
+ 		/* Baseboard board EEPROM */
+ 		I2C_BOARD_INFO("24c256", BASEBOARD_I2C_ADDR),
+ 		.platform_data  = &am335x_baseboard_eeprom_info,
+ 	},
+-
+ #if 0
+ 	{
+ 		I2C_BOARD_INFO("cpld_reg", 0x35),
+@@ -2509,6 +2573,7 @@ static struct i2c_board_info __initdata am335x_i2c0_boardinfo[] = {
+ 		I2C_BOARD_INFO("tps65910", TPS65910_I2C_ID1),
+ 		.platform_data  = &am335x_tps65910_info,
+ 	},
++
+ 	{
+ 		I2C_BOARD_INFO("tlv320aic3x", 0x1b),
+ 	},
+@@ -2566,7 +2631,7 @@ static void evm_init_cpld(void)
+ static void __init am335x_evm_i2c_init(void)
+ {
+ 	/* Initially assume General Purpose EVM Config */
+-#if 0
++#if 1
+ 	am335x_evm_id = GEN_PURP_EVM;
+ 
+ 	evm_init_cpld();
+diff --git a/board-support/linux-3.2.0-psp04.06.00.10/sound/soc/codecs/tlv320aic3x.c b/board-support/linux-3.2.0-psp04.06.00.10/sound/soc/codecs/tlv320aic3x.c
+index 8c1977b..0a13e8f 100644
+--- a/board-support/linux-3.2.0-psp04.06.00.10/sound/soc/codecs/tlv320aic3x.c
++++ b/board-support/linux-3.2.0-psp04.06.00.10/sound/soc/codecs/tlv320aic3x.c
+@@ -52,7 +52,7 @@
+ 
+ #include "tlv320aic3x.h"
+ 
+-#define AIC3X_NUM_SUPPLIES	4
++#define AIC3X_NUM_SUPPLIES	0
+ static const char *aic3x_supply_names[AIC3X_NUM_SUPPLIES] = {
+ 	"IOVDD",	/* I/O Voltage */
+ 	"DVDD",		/* Digital Core Voltage */
+@@ -1415,6 +1415,8 @@ static int aic3x_probe(struct snd_soc_codec *codec)
+ 	for (i = 0; i < ARRAY_SIZE(aic3x->supplies); i++)
+ 		aic3x->supplies[i].supply = aic3x_supply_names[i];
+ 
++/*==?????==*/
++#if 1
+ 	ret = regulator_bulk_get(codec->dev, ARRAY_SIZE(aic3x->supplies),
+ 				 aic3x->supplies);
+ 	if (ret != 0) {
+@@ -1452,7 +1454,7 @@ static int aic3x_probe(struct snd_soc_codec *codec)
+ 
+ 	aic3x_add_widgets(codec);
+ 	list_add(&aic3x->list, &reset_list);
+-
++#endif
+ 	return 0;
+ 
+ err_notif:
+diff --git a/board-support/linux-3.2.0-psp04.06.00.10/sound/soc/davinci/davinci-evm.c b/board-support/linux-3.2.0-psp04.06.00.10/sound/soc/davinci/davinci-evm.c
+index fe1563c..6529fcd 100644
+--- a/board-support/linux-3.2.0-psp04.06.00.10/sound/soc/davinci/davinci-evm.c
++++ b/board-support/linux-3.2.0-psp04.06.00.10/sound/soc/davinci/davinci-evm.c
+@@ -43,6 +43,7 @@ static int evm_hw_params(struct snd_pcm_substream *substream,
+ 	int ret = 0;
+ 	unsigned sysclk;
+ 
++#if 0
+ 	/* ASP1 on DM355 EVM is clocked by an external oscillator */
+ 	if (machine_is_davinci_dm355_evm() || machine_is_davinci_dm6467_evm() ||
+ 	    machine_is_davinci_dm365_evm())
+@@ -69,7 +70,10 @@ static int evm_hw_params(struct snd_pcm_substream *substream,
+ 
+ 	else
+ 		return -EINVAL;
+-
++#else
++	/*==beaglebone dvi-cape clock==*/
++	 sysclk = 12000000;
++#endif
+ 	/* set codec DAI configuration */
+ 	ret = snd_soc_dai_set_fmt(codec_dai, AUDIO_FORMAT);
+ 	if (ret < 0)
+@@ -271,6 +275,19 @@ static struct snd_soc_dai_link am335x_evm_sk_dai = {
+ 	.ops = &evm_ops,
+ };
+ 
++/*==for beagle_bone dvi-cape ==*/
++static struct snd_soc_dai_link beaglebone_dvi_cape_dai = {
++        .name = "TLV320AIC3X",
++        .stream_name = "AIC3X",
++        .cpu_dai_name = "davinci-mcasp.0",
++        .codec_dai_name = "tlv320aic3x-hifi",
++        .codec_name = "tlv320aic3x-codec.3-001b",
++        .platform_name = "davinci-pcm-audio",
++        .init = evm_aic3x_init,
++        .ops = &evm_ops,
++};
++
++
+ /* davinci dm6446 evm audio machine driver */
+ static struct snd_soc_card dm6446_snd_soc_card_evm = {
+ 	.name = "DaVinci DM6446 EVM",
+@@ -323,6 +340,12 @@ static struct snd_soc_card am335x_evm_sk_snd_soc_card = {
+ 	.num_links = 1,
+ };
+ 
++static struct snd_soc_card beaglebone_dvi_cape_snd_soc_card = {
++        .name = "beaglebone dvi-cape",
++        .dai_link = &beaglebone_dvi_cape_dai,
++        .num_links = 1,
++};
++
+ static struct platform_device *evm_snd_device;
+ 
+ static int __init evm_init(void)
+@@ -331,6 +354,7 @@ static int __init evm_init(void)
+ 	int index;
+ 	int ret;
+ 
++#if 0
+ 	if (machine_is_davinci_evm()) {
+ 		evm_snd_dev_data = &dm6446_snd_soc_card_evm;
+ 		index = 0;
+@@ -358,6 +382,12 @@ static int __init evm_init(void)
+ 		index = 0;
+ 	} else
+ 		return -EINVAL;
++#else
++	evm_snd_dev_data = &beaglebone_dvi_cape_snd_soc_card;
++	index = 0;
++#endif
++
++		
+ 
+ 	evm_snd_device = platform_device_alloc("soc-audio", index);
+ 	if (!evm_snd_device)
+-- 
+1.7.9.5
+

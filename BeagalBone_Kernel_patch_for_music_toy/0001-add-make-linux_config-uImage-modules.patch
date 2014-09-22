@@ -1,0 +1,36 @@
+From 1fbb57374cccbef720200f463ee6ebe84660e1fa Mon Sep 17 00:00:00 2001
+From: C-ty <cty222@hotmail.com>
+Date: Wed, 24 Jul 2013 08:46:58 -0700
+Subject: [PATCH 1/5] add make linux_config uImage modules
+
+---
+ Makefile |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index ec47361..6f3a280 100755
+--- a/Makefile
++++ b/Makefile
+@@ -4,12 +4,18 @@ all: linux matrix-gui arm-benchmarks am-sysinfo matrix-gui-browser refresh-scree
+ clean: linux_clean matrix-gui_clean arm-benchmarks_clean am-sysinfo_clean matrix-gui-browser_clean refresh-screen_clean qt-tstat_clean u-boot-spl_clean quick-playground_clean wireless_clean ti-crypto-examples_clean 
+ install: linux_install matrix-gui_install arm-benchmarks_install am-sysinfo_install matrix-gui-browser_install refresh-screen_install qt-tstat_install u-boot-spl_install quick-playground_install wireless_install ti-crypto-examples_install 
+ # Kernel build targets
+-linux:
++linux: linux_config uImage modules
+ 	@echo =================================
+ 	@echo     Building the Linux Kernel
+ 	@echo =================================
++
++linux_config:
+ 	$(MAKE) -C $(LINUXKERNEL_INSTALL_DIR) ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) tisdk_$(PLATFORM)_defconfig
++
++uImage:
+ 	$(MAKE) -C $(LINUXKERNEL_INSTALL_DIR) ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) uImage
++
++modules:
+ 	$(MAKE) -C $(LINUXKERNEL_INSTALL_DIR) ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) modules
+ 
+ linux_install:
+-- 
+1.7.9.5
+
