@@ -1,32 +1,37 @@
 #include "stdio.h"
 #include "stdlib.h" 
-#include "wavFunction.h"
+#include "WavProtocol.h"
 
-int get_pcm_data(char *fileName, uint8_t **pWavData,WaveTotalInfo **pWavHeader)
+int ReadPCMDataFromWavFile(WAV_FILE_DATA * ThisWavFileData)
 {
-	FILE *wavFile;
-    wavFile=fopen(fileName,"rb");
+	if (ThisWavFileData->FileName == NULL)
+	{
+		return -1;
+	}
 	
+	FILE *wavFile;
+	wavFile=fopen(ThisWavFileData->FileName, "rb");
 	if(wavFile==0)
     {
                 printf("Read wav Error.\n");
                 return -1;
     }
-
-	/*==Read wav head info.==*/
-	*pWavHeader = (WaveTotalInfo *)malloc(sizeof(WaveTotalInfo));
-	fread(*pWavHeader,sizeof(WaveTotalInfo),1,wavFile);
-
-	*pWavData = (uint8_t *)malloc((*pWavHeader)->waveDataStart.dataSize);
-	fread(*pWavData,(*pWavHeader)->waveDataStart.dataSize,1,wavFile);
-
+    
+    ThisWavFileData->WavInfo = (WaveTotalInfo *)malloc(sizeof(WaveTotalInfo));
+    fread(ThisWavFileData->WavInfo, sizeof(WaveTotalInfo), 1, wavFile);
+    
+    int datasize = ThisWavFileData->WavInfo->waveDataStart.dataSize;
+    
+    ThisWavFileData->PCMData = (uint8_t *)malloc(datasize);
+	fread(ThisWavFileData->PCMData, datasize, 1, wavFile);
+	
 	return 0;
 }
 
-int Out_pcm_data(char *fileName, uint8_t *pWavData, WaveTotalInfo *pWavHeader)
+int WritePCMDataInWavFile(WAV_FILE_DATA * ThisWavFileData)
 {
 	FILE *wavFile;
-    wavFile=fopen(fileName,"wb");
+    wavFile=fopen(ThisWavFileData->FileName,"wb");
 	
 	if(wavFile==0)
     {
@@ -35,77 +40,101 @@ int Out_pcm_data(char *fileName, uint8_t *pWavData, WaveTotalInfo *pWavHeader)
     }
 
 	/*==Write wav head info.==*/
-	fwrite(pWavHeader, sizeof(WaveTotalInfo), 1, wavFile);
+	fwrite(ThisWavFileData->WavInfo, sizeof(WaveTotalInfo), 1, wavFile);
 
 	int res;
-	int datasize = pWavHeader->waveDataStart.dataSize;
+	int datasize = ThisWavFileData->WavInfo->waveDataStart.dataSize;
 
 	// fwrite return count
-	res = fwrite(pWavData, datasize, 1, wavFile);
+	res = fwrite(ThisWavFileData->PCMData, datasize, 1, wavFile);
 
 	fclose(wavFile);
 	return 0;
 }
 
+int GetPCMDataSize(WAV_FILE_DATA * ThisWavFileData)
+{
+	return ThisWavFileData->WavInfo->waveDataStart.dataSize;
+}
 
-static char* First1 = "01.wav";
-static char* Second2 = "02.wav";
-static char* Output = "Output.wav";
+/*void MixPCMData(WAV_FILE_DATA * OutPutFile, WAV_FILE_DATA * InputFile1, WAV_FILE_DATA * InputFile2) 
+{
+	
+}*/
+
+void FreeWavFileProtocol (WAV_FILE_PROTOCOL **ThisProtocol)
+{
+	if (ThisProtocol != NULL)
+	{
+		free(*ThisProtocol);
+		ThisProtocol = NULL;
+	}
+}
+
+
+WAV_FILE_PROTOCOL * CreateWavFileProtocol()
+{
+	WAV_FILE_PROTOCOL * ThisProtocol = malloc(sizeof(WAV_FILE_PROTOCOL));
+	ThisProtocol->OpenWavFile 		= ReadPCMDataFromWavFile;
+	ThisProtocol->WriteInWavFile	= WritePCMDataInWavFile;
+	ThisProtocol->GetWavPCMDataSize	= GetPCMDataSize;
+	ThisProtocol->FreeThisProtocol  = FreeWavFileProtocol;
+	return ThisProtocol;
+}
 
 int main(int argc, char *argv[])
 {
 	int res;
 	
+	WAV_FILE_PROTOCOL *WavFileProtocol = CreateWavFileProtocol();
+	
 	/*==Read data==*/
-	uint8_t *pWavData1;
-	WaveTotalInfo *pWavHeader1;
-	
-	uint8_t *pWavData2;
-	WaveTotalInfo *pWavHeader2;
-	
-	uint8_t *pWavDataOut;
-	WaveTotalInfo *pWavHeaderOut;
-	
-	res = get_pcm_data(First1,&pWavData1,&pWavHeader1);
+	WAV_FILE_DATA WavFile1;
+	WAV_FILE_DATA WavFile2;
+	WAV_FILE_DATA WavFileOutPut;
+
+	WavFile1.FileName = "01.wav";
+	WavFile2.FileName = "02.wav";
+	WavFileOutPut.FileName = "Output.wav";
+	res = WavFileProtocol->OpenWavFile(&WavFile1);
+	if (res != 0)
+	{
+		printf("File 1 open Error\n");
+		return res;
+	}
+
+	res = WavFileProtocol->OpenWavFile(&WavFile2);
 	if (res != 0)
 	{
 		printf("File 1 open Error\n");
 		return res;
 	}
 	
-	res = get_pcm_data(Second2,&pWavData2,&pWavHeader2);
-	if (res != 0)
-	{
-		printf("File 2 open Error\n");
-		return res;
-	}
-	
-	
 	//
-	int datasize1 = pWavHeader1->waveDataStart.dataSize;
-	int datasize2 = pWavHeader2->waveDataStart.dataSize;
+	int datasize1 = WavFileProtocol->GetWavPCMDataSize(&WavFile1);
+	int datasize2 =  WavFileProtocol->GetWavPCMDataSize(&WavFile2);
 	int SmallSize;
 	if (datasize1 > datasize2)
 	{
-		pWavHeaderOut = pWavHeader1;
-		pWavDataOut = pWavData1;
+		WavFileOutPut.WavInfo = WavFile1.WavInfo;
+		WavFileOutPut.PCMData = WavFile1.PCMData;
 		
 		SmallSize = datasize2;
 	}
 	else
 	{
-		pWavHeaderOut = pWavHeader2;
-		pWavDataOut = pWavData2;
+		WavFileOutPut.WavInfo = WavFile2.WavInfo;
+		WavFileOutPut.PCMData = WavFile2.PCMData;
 		
 		SmallSize = datasize1;
 	}
 	
-	int i;
-#if 1
+	int i;	
+
 	for(i=0; i<SmallSize; i+=2) 
 	{
-		float a = (*(short *)(&pWavData1[i])) / 36768.0f;
-		float b = (*(short *)(&pWavData2[i])) / 36768.0f;
+		float a = (*(short *)(&WavFile1.PCMData[i])) / 36768.0f;
+		float b = (*(short *)(&WavFile2.PCMData[i])) / 36768.0f;
 		float mixed = a + b;
 		mixed *= 0.8;
 		if (mixed > 1.0f) mixed = 1.0f;
@@ -113,12 +142,13 @@ int main(int argc, char *argv[])
 
 		short out = (short)(mixed * 32768.0f);
 		
-		pWavDataOut[i] = ((char *)&out)[0];
-		pWavDataOut[i+1] = ((char *)&out)[1];
+		WavFileOutPut.PCMData[i] = ((char *)&out)[0];
+		WavFileOutPut.PCMData[i+1] = ((char *)&out)[1];
 	}
-#endif
-	Out_pcm_data(Output, pWavDataOut, pWavHeaderOut);
+
+	WavFileProtocol->WriteInWavFile(&WavFileOutPut);
 	
+
 	/*
 	printf ("fmtSize %d\n", pWavData1->waveHead.fmtSize);
 	printf ("riffSize %d\n", pWavData1->waveHead.riffSize);
@@ -129,7 +159,8 @@ int main(int argc, char *argv[])
 	printf ("bitsPerSample %d\n", pWavData1->waveFormat.bitsPerUnit);
 	printf ("dataSize %d\n", pWavData1->waveDataStart.dataSize);
 	*/
-	
+
+#if 0	
 	if (res == 0)
 	{
 		free(pWavHeader1);
@@ -137,5 +168,8 @@ int main(int argc, char *argv[])
 		free(pWavHeader2);
 		free(pWavData2);
 	}
+#endif
+	
+	WavFileProtocol->FreeThisProtocol(&WavFileProtocol);
 	return res;
 }
